@@ -1,0 +1,1197 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <base target="_top">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    /* ===== リセット・ベース ===== */
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Hiragino Kaku Gothic ProN", "Noto Sans JP", Roboto, Arial, sans-serif;
+      line-height: 1.6; color: #333; background: #f4f7f6; padding: 20px;
+    }
+    .hidden { display: none !important; }
+
+    /* ===== 共通コンポーネント ===== */
+    .page {
+      padding: 30px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,.1);
+      background: #fff; max-width: 800px; margin: 0 auto;
+    }
+    h1, h2 { color: #2c3e50; border-bottom: 2px solid #3498db; padding-bottom: 10px; margin-bottom: 15px; }
+    h3 { margin-top: 0; margin-bottom: 10px; }
+    h4 { margin-top: 20px; margin-bottom: 10px; }
+    .form-group { margin-bottom: 20px; }
+    label { font-weight: bold; margin-bottom: 8px; display: block; }
+    label.required::after { content: " *"; color: #e74c3c; font-weight: bold; }
+
+    select, textarea, input[type="text"], input[type="password"] {
+      width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 4px;
+      background-color: #fff; font-size: 16px;
+    }
+    select {
+      -webkit-appearance: none; -moz-appearance: none; appearance: none;
+      background-image: url('data:image/svg+xml;charset=US-ASCII,%3Csvg xmlns%3D%22http%3A//www.w3.org/2000/svg%22 width%3D%22292.4%22 height%3D%22292.4%22%3E%3Cpath fill%3D%22%23007CB2%22 d%3D%22M287 69.4a17.6 17.6 0 0 0-13-5.4H18.4c-5 0-9.3 1.8-12.9 5.4A17.6 17.6 0 0 0 0 82.2c0 5 1.8 9.3 5.4 12.9l128 127.9c3.6 3.6 7.8 5.4 12.8 5.4s9.2-1.8 12.8-5.4L287 95c3.5-3.5 5.4-7.8 5.4-12.8 0-5-1.9-9.2-5.5-12.8z%22/%3E%3C/svg%3E');
+      background-repeat: no-repeat; background-position: right 1rem center; background-size: .65em auto;
+      cursor: pointer;
+    }
+    textarea { resize: vertical; }
+
+    button {
+      display: inline-block; background: #3498db; color: #fff; padding: 12px 25px;
+      border: none; border-radius: 4px; cursor: pointer; font-size: 16px;
+      transition: background .3s; margin-top: 10px;
+    }
+    button:hover { background: #2980b9; }
+    button:disabled { background: #bdc3c7; cursor: not-allowed; }
+    button.secondary { background: #7f8c8d; }
+    button.secondary:hover { background: #95a5a6; }
+    button.danger { background: #e74c3c; }
+    button.danger:hover { background: #c0392b; }
+    button.success { background: #27ae60; }
+    button.success:hover { background: #219a52; }
+
+    /* ===== ログイン ===== */
+    .login-container {
+      max-width: 400px; margin: 50px auto; padding: 40px;
+      background: #fff; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,.1);
+    }
+    .login-title { text-align: center; color: #2c3e50; margin-bottom: 30px; border: none; }
+    .login-button { width: 100%; padding: 15px; font-size: 18px; margin-top: 20px; }
+    .login-error { color: #e74c3c; text-align: center; margin-top: 15px; }
+    .login-success { color: #2ecc71; text-align: center; margin-top: 15px; white-space: pre-line; }
+    .tab-buttons { display: flex; border-bottom: 2px solid #e0e0e0; margin-bottom: 20px; }
+    .tab-button {
+      padding: 10px 20px; background: none; border: none;
+      border-bottom: 3px solid transparent; color: #7f8c8d;
+      cursor: pointer; transition: all .3s; margin: 0 5px; font-size: 16px;
+    }
+    .tab-button.active { color: #3498db; border-bottom-color: #3498db; }
+    .tab-content { padding: 10px 0; }
+    .password-requirements { font-size: 14px; color: #7f8c8d; margin-top: 5px; }
+
+    /* ===== ステータスバー ===== */
+    .login-status {
+      position: fixed; top: 0; left: 0; right: 0; background: #fff;
+      padding: 10px 20px; box-shadow: 0 2px 5px rgba(0,0,0,.1);
+      font-size: 14px; z-index: 999; display: flex; align-items: center; gap: 10px;
+    }
+    .logout-link { color: #3498db; cursor: pointer; text-decoration: underline; }
+    .period-badge {
+      display: inline-block; background: #3498db; color: #fff; padding: 3px 12px;
+      border-radius: 15px; font-size: 13px;
+    }
+    .admin-badge {
+      display: inline-block; background: #e74c3c; color: #fff; padding: 3px 12px;
+      border-radius: 15px; font-size: 13px;
+    }
+    .status-spacer { flex: 1; }
+
+    /* ===== 自動保存 ===== */
+    .autosave-indicator {
+      position: fixed; top: 60px; right: 20px; padding: 8px 16px; background: #2ecc71;
+      color: #fff; border-radius: 4px; font-size: 14px; opacity: 0;
+      transition: opacity .3s; z-index: 1000;
+    }
+    .autosave-indicator.show { opacity: 1; }
+    .autosave-indicator.error { background: #e74c3c; }
+
+    /* ===== メインコンテンツ ===== */
+    #mainApp { padding-top: 50px; }
+    .period-info {
+      background: #e8f4f8; padding: 15px; border-radius: 5px;
+      margin-bottom: 20px; border-left: 4px solid #3498db;
+    }
+    .checkbox-list-item {
+      border: 1px solid #e0e0e0; padding: 12px 15px; border-radius: 5px;
+      margin-bottom: 8px; cursor: pointer;
+    }
+    .checkbox-list-item:hover { background: #f7f7f7; }
+    .checkbox-list-item label { font-weight: normal; display: flex; align-items: center; gap: 10px; cursor: pointer; margin-bottom: 0; }
+    .checkbox-list-item input[type="checkbox"] { transform: scale(1.3); }
+
+    /* ===== 評価フォーム ===== */
+    .item-container { border: 1px solid #e0e0e0; padding: 20px; border-radius: 5px; margin-top: 15px; }
+    .sub-item { padding-bottom: 15px; margin-bottom: 15px; border-bottom: 1px solid #f0f0f0; }
+    .sub-item:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+    .sub-item-title { font-weight: bold; margin-bottom: 5px; }
+    .likert-scale { display: flex; justify-content: space-around; padding-top: 8px; flex-wrap: wrap; gap: 5px; }
+    .likert-scale label {
+      font-weight: normal; display: flex; flex-direction: column; align-items: center;
+      cursor: pointer; padding: 5px; border-radius: 4px; min-width: 80px; text-align: center;
+    }
+    .likert-scale label:hover { background: #f0f0f0; }
+    .likert-scale input[type="radio"] { transform: scale(1.3); margin-bottom: 5px; }
+
+    .progress-bar { width: 100%; height: 30px; background: #ecf0f1; border-radius: 15px; overflow: hidden; margin: 15px 0; }
+    .progress-bar-fill {
+      height: 100%; background: #3498db; transition: width .3s ease;
+      display: flex; align-items: center; justify-content: center;
+      color: #fff; font-weight: bold; font-size: 14px;
+    }
+    .button-group { margin-top: 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; }
+    .button-group > div { display: flex; gap: 10px; }
+
+    /* ===== 管理者パネル ===== */
+    .admin-panel {
+      background: #fdf2e9; border: 2px solid #e67e22; border-radius: 8px;
+      padding: 25px; margin-bottom: 20px;
+    }
+    .admin-panel h2 { color: #e67e22; border-bottom-color: #e67e22; }
+    .progress-table { width: 100%; border-collapse: collapse; margin: 15px 0; }
+    .progress-table th, .progress-table td {
+      border: 1px solid #ddd; padding: 10px; text-align: center;
+    }
+    .progress-table th { background: #e67e22; color: #fff; }
+    .progress-table .complete { background: #d5f5e3; }
+    .progress-table .incomplete { background: #fadbd8; }
+    .progress-summary { font-size: 18px; font-weight: bold; margin: 15px 0; }
+
+    /* ===== 評価シート（印刷用） ===== */
+    .eval-sheets-container { max-width: 900px; margin: 0 auto; }
+    .eval-sheet {
+      background: #fff; border: 1px solid #ccc; border-radius: 8px;
+      padding: 30px; margin-bottom: 30px; page-break-after: always;
+    }
+    .eval-sheet-header {
+      text-align: center; margin-bottom: 25px; padding: 20px;
+      background: linear-gradient(135deg, #2c3e50, #3498db); color: #fff;
+      border-radius: 8px;
+    }
+    .eval-sheet-header h2 { color: #fff; border: none; margin: 0; font-size: 24px; }
+    .eval-sheet-header .total-score {
+      font-size: 48px; font-weight: bold; margin: 10px 0;
+    }
+    .eval-sheet-header .rank-badge {
+      display: inline-block; padding: 5px 20px; border-radius: 20px;
+      font-size: 18px; font-weight: bold;
+    }
+    .rank-excellent { background: #27ae60; color: #fff; }
+    .rank-good { background: #2980b9; color: #fff; }
+    .rank-effort { background: #f39c12; color: #fff; }
+    .rank-guidance { background: #e74c3c; color: #fff; }
+
+    .radar-container { text-align: center; margin: 20px 0; }
+    .radar-container svg { max-width: 100%; }
+
+    .score-table { width: 100%; border-collapse: collapse; margin: 20px 0; font-size: 14px; }
+    .score-table th, .score-table td { border: 1px solid #ccc; padding: 8px 12px; text-align: center; }
+    .score-table th { background: #34495e; color: #fff; font-size: 13px; }
+    .score-table .group-a { background: #fef9e7; }
+    .score-table .group-b { background: #ebf5fb; }
+    .score-table .total-row { background: #f5f5f5; font-weight: bold; }
+    .score-table td:first-child { text-align: left; font-weight: bold; }
+    .score-bar { display: inline-block; height: 12px; border-radius: 6px; vertical-align: middle; }
+
+    .comments-section { margin-top: 20px; }
+    .comment-block { margin-bottom: 15px; padding: 12px; border-radius: 5px; border-left: 4px solid #ccc; }
+    .comment-block.self { border-left-color: #e74c3c; background: #fef5f5; }
+    .comment-block.colleague { border-left-color: #3498db; background: #f0f8ff; }
+    .comment-block.supervisor { border-left-color: #27ae60; background: #f0fff0; }
+    .comment-role { font-weight: bold; margin-bottom: 5px; font-size: 14px; }
+    .comment-text { font-size: 14px; line-height: 1.6; }
+
+    .good-improve-section { display: flex; gap: 20px; margin: 15px 0; }
+    .good-improve-section > div { flex: 1; }
+    .good-points { background: #eafaf1; padding: 15px; border-radius: 5px; border: 1px solid #a3d9a5; }
+    .improve-points { background: #fdf2e9; padding: 15px; border-radius: 5px; border: 1px solid #f5b041; }
+    .good-points h4 { color: #27ae60; margin: 0 0 10px; }
+    .improve-points h4 { color: #e67e22; margin: 0 0 10px; }
+    .point-item { padding: 5px 0; font-size: 14px; }
+
+    /* ===== レスポンシブ ===== */
+    @media (max-width: 600px) {
+      body { padding: 10px; }
+      .page, .login-container { padding: 20px; }
+      .likert-scale { flex-direction: column; }
+      .likert-scale label { flex-direction: row; gap: 10px; min-width: auto; }
+      .good-improve-section { flex-direction: column; }
+      .login-status { flex-wrap: wrap; font-size: 12px; }
+    }
+
+    /* ===== 印刷 ===== */
+    @media print {
+      body { background: #fff; padding: 0; }
+      .login-status, .autosave-indicator, #loginPage, .no-print { display: none !important; }
+      .eval-sheet { box-shadow: none; border: none; page-break-after: always; }
+      .eval-sheets-container { max-width: 100%; }
+    }
+  </style>
+</head>
+<body>
+  <div id="appContainer">
+    <!-- ===== ログインページ ===== -->
+    <div id="loginPage" class="login-container">
+      <h1 class="login-title">360° スタッフ評価システム</h1>
+      <div class="tab-container">
+        <div class="tab-buttons">
+          <button id="loginTab" class="tab-button active">ログイン</button>
+          <button id="registerTab" class="tab-button">新規登録</button>
+        </div>
+        <div id="loginContent" class="tab-content">
+          <div class="form-group">
+            <label for="loginEmail" class="required">メールアドレス</label>
+            <input type="text" id="loginEmail" placeholder="メールアドレスを入力">
+          </div>
+          <div class="form-group">
+            <label for="loginPassword" class="required">パスワード</label>
+            <input type="password" id="loginPassword" placeholder="パスワードを入力">
+          </div>
+          <button id="loginButton" class="login-button">ログイン</button>
+          <div style="text-align:center;margin-top:15px;font-size:14px;color:#7f8c8d;">
+            ※パスワードを忘れた場合は管理者にお問い合わせください
+          </div>
+        </div>
+        <div id="registerContent" class="tab-content hidden">
+          <div class="form-group">
+            <label for="registerName" class="required">名前を選択</label>
+            <select id="registerName"><option value="">選択してください</option></select>
+          </div>
+          <div class="form-group">
+            <label for="registerEmail" class="required">メールアドレス</label>
+            <input type="text" id="registerEmail" placeholder="example@example.com">
+            <div class="password-requirements">※ ログインIDとして使用されます</div>
+          </div>
+          <div class="form-group">
+            <label for="registerPassword" class="required">パスワード</label>
+            <input type="password" id="registerPassword" placeholder="4〜16文字の英数字">
+            <div class="password-requirements">※ 4文字以上16文字以下の英数字</div>
+          </div>
+          <div class="form-group">
+            <label for="confirmPassword" class="required">パスワード確認</label>
+            <input type="password" id="confirmPassword" placeholder="パスワードを再入力">
+          </div>
+          <button id="registerButton" class="login-button">登録</button>
+        </div>
+      </div>
+      <div id="loginError" class="login-error hidden"></div>
+      <div id="loginSuccess" class="login-success hidden"></div>
+    </div>
+
+    <!-- ===== メインアプリ ===== -->
+    <div id="mainApp" class="hidden">
+      <div class="login-status">
+        ログイン中: <strong id="loggedInUser"></strong>
+        <span id="currentPeriodBadge" class="period-badge"></span>
+        <span id="adminBadge" class="admin-badge hidden">管理者</span>
+        <span class="status-spacer"></span>
+        <span class="logout-link" id="logoutLink">ログアウト</span>
+      </div>
+
+      <div id="autosaveIndicator" class="autosave-indicator">自動保存しました</div>
+
+      <!-- ===== 管理者パネル ===== -->
+      <div id="adminPanel" class="admin-panel hidden">
+        <h2>管理者パネル</h2>
+        <p>評価の進捗を確認し、すべての評価が完了したら「評価完了・シート出力」ボタンを押してください。</p>
+        <button id="btnRefreshProgress" class="secondary" style="margin-right:10px;">進捗を更新</button>
+        <button id="btnCompleteEval" class="success">評価完了・シート出力</button>
+        <div id="progressTableContainer" style="margin-top:15px;"></div>
+      </div>
+
+      <!-- ===== ステップ1: 被評価者選択 ===== -->
+      <div id="page1" class="page">
+        <div id="periodInfoBox" class="period-info hidden">
+          <strong>評価期間:</strong> <span id="periodInfoText"></span>
+        </div>
+        <h2>ステップ1: 誰を評価しますか？</h2>
+        <div style="margin-bottom:15px;">
+          <button id="btn-select-all" style="margin-right:10px;">全員を選択</button>
+          <button id="btn-deselect-all" class="secondary">全員を解除</button>
+        </div>
+        <div id="evaluatedPersonCheckboxes" class="form-group"></div>
+        <button id="btn-start-eval">評価を開始</button>
+      </div>
+
+      <!-- ===== ステップ2: 評価入力 ===== -->
+      <div id="page2" class="page hidden">
+        <div id="progressContainer">
+          <h2 id="evaluationHeader"></h2>
+          <div class="progress-bar"><div id="progressBarFill" class="progress-bar-fill"></div></div>
+        </div>
+        <form id="evaluationForm"></form>
+        <div class="button-group">
+          <button id="btn-back-to-step1" class="secondary">評価する人の選択に戻る</button>
+          <div>
+            <button id="btn-back-to-previous" class="secondary">前の人へ</button>
+            <button id="nextButton">次の人の評価へ</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== ステップ3: 送信完了 ===== -->
+      <div id="page3" class="page hidden">
+        <h2>評価完了</h2>
+        <div id="status-message" style="margin:20px 0;font-size:16px;"></div>
+        <button id="btn-reset">最初の画面に戻る</button>
+      </div>
+
+      <!-- ===== 評価シート出力画面 ===== -->
+      <div id="page4" class="hidden">
+        <div class="no-print" style="text-align:center;margin-bottom:20px;">
+          <button id="btnPrintSheets" style="font-size:18px;padding:15px 40px;">印刷 / PDF保存</button>
+          <button id="btnBackFromSheets" class="secondary" style="font-size:18px;padding:15px 40px;">戻る</button>
+        </div>
+        <div id="evalSheetsContainer" class="eval-sheets-container"></div>
+      </div>
+    </div>
+  </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  // ===== 状態 =====
+  var currentUser = '';
+  var isAdmin = false;
+  var evaluatorList = [], evaluatedList = [], itemTemplates = [];
+  var appSettings = {};
+  var loginEnabled = true;
+  var periods = [];
+  var activePeriod = null;
+  var selectedEvaluatedPersons = [], evaluationDataStore = {}, currentEvaluationIndex = 0;
+  var autosaveTimeout;
+  var isAutosaving = false;
+
+  // ===== DOM参照 =====
+  var loginPage = document.getElementById('loginPage');
+  var mainApp = document.getElementById('mainApp');
+  var loginTab = document.getElementById('loginTab');
+  var registerTab = document.getElementById('registerTab');
+  var loginContent = document.getElementById('loginContent');
+  var registerContent = document.getElementById('registerContent');
+  var loginEmail = document.getElementById('loginEmail');
+  var loginPassword = document.getElementById('loginPassword');
+  var loginButton = document.getElementById('loginButton');
+  var registerName = document.getElementById('registerName');
+  var registerEmail = document.getElementById('registerEmail');
+  var registerPassword = document.getElementById('registerPassword');
+  var confirmPassword = document.getElementById('confirmPassword');
+  var registerButton = document.getElementById('registerButton');
+  var loginError = document.getElementById('loginError');
+  var loginSuccess = document.getElementById('loginSuccess');
+  var loggedInUser = document.getElementById('loggedInUser');
+  var currentPeriodBadge = document.getElementById('currentPeriodBadge');
+  var adminBadge = document.getElementById('adminBadge');
+  var logoutLink = document.getElementById('logoutLink');
+  var autosaveIndicator = document.getElementById('autosaveIndicator');
+  var periodInfoBox = document.getElementById('periodInfoBox');
+  var periodInfoText = document.getElementById('periodInfoText');
+  var adminPanel = document.getElementById('adminPanel');
+
+  var pages = {
+    step1: document.getElementById('page1'),
+    step2: document.getElementById('page2'),
+    step3: document.getElementById('page3'),
+    step4: document.getElementById('page4')
+  };
+
+  // ===== ユーティリティ =====
+  function switchTab(activeTab) {
+    loginTab.classList.toggle('active', activeTab === 'login');
+    registerTab.classList.toggle('active', activeTab !== 'login');
+    loginContent.classList.toggle('hidden', activeTab !== 'login');
+    registerContent.classList.toggle('hidden', activeTab === 'login');
+    clearMessages();
+  }
+
+  function clearMessages() {
+    loginError.classList.add('hidden');
+    loginSuccess.classList.add('hidden');
+    loginError.textContent = '';
+    loginSuccess.textContent = '';
+  }
+
+  function showError(msg) {
+    loginError.textContent = msg;
+    loginError.classList.remove('hidden');
+    loginSuccess.classList.add('hidden');
+  }
+
+  function showSuccess(msg) {
+    loginSuccess.textContent = msg;
+    loginSuccess.classList.remove('hidden');
+    loginError.classList.add('hidden');
+  }
+
+  function validateEmail(email) { return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email); }
+  function validatePassword(pw) { return /^[a-zA-Z0-9]{4,16}$/.test(pw); }
+
+  function formatDate(dateStr) {
+    if (!dateStr) return '';
+    var d = new Date(dateStr);
+    return d.getFullYear() + '/' + (d.getMonth() + 1) + '/' + d.getDate();
+  }
+
+  function escapeHtml(str) {
+    if (!str) return '';
+    return str.toString().replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  function updatePeriodDisplay() {
+    if (activePeriod) {
+      currentPeriodBadge.textContent = activePeriod.name;
+      periodInfoText.textContent = activePeriod.name + ' (' + formatDate(activePeriod.startDate) + ' - ' + formatDate(activePeriod.endDate) + ')';
+      periodInfoBox.classList.remove('hidden');
+    } else {
+      currentPeriodBadge.textContent = '期間未設定';
+      periodInfoBox.classList.add('hidden');
+    }
+  }
+
+  function showAutosaveIndicator(isError) {
+    autosaveIndicator.classList.toggle('error', isError);
+    autosaveIndicator.textContent = isError ? '保存エラー' : '自動保存しました';
+    autosaveIndicator.classList.add('show');
+    setTimeout(function() { autosaveIndicator.classList.remove('show'); }, 2000);
+  }
+
+  function getCurrentStep() {
+    if (!pages.step1.classList.contains('hidden')) return 'step1';
+    if (!pages.step2.classList.contains('hidden')) return 'step2';
+    if (!pages.step3.classList.contains('hidden')) return 'step3';
+    return 'step1';
+  }
+
+  function switchPage(pageToShow) {
+    Object.values(pages).forEach(function(p) {
+      p.classList.toggle('hidden', p !== pageToShow);
+    });
+  }
+
+  // ===== 自動保存 =====
+  function saveToServer() {
+    if (isAutosaving || !currentUser) return;
+    isAutosaving = true;
+    var dataToSave = {
+      selectedEvaluatedPersons: selectedEvaluatedPersons,
+      evaluationDataStore: evaluationDataStore,
+      currentEvaluationIndex: currentEvaluationIndex,
+      currentStep: getCurrentStep(),
+      timestamp: new Date().toISOString()
+    };
+    google.script.run
+      .withSuccessHandler(function() { showAutosaveIndicator(false); isAutosaving = false; })
+      .withFailureHandler(function() { showAutosaveIndicator(true); isAutosaving = false; })
+      .saveTempData(currentUser, dataToSave);
+  }
+
+  function triggerAutosave() {
+    clearTimeout(autosaveTimeout);
+    autosaveTimeout = setTimeout(function() {
+      saveCurrentEvaluation();
+      saveToServer();
+    }, 2000);
+  }
+
+  // ===== 初期化 =====
+  function initLoginPage() {
+    google.script.run
+      .withSuccessHandler(function(response) {
+        if (!response || response.error) {
+          showError(response ? 'サーバーエラー: ' + response.error : 'データを取得できませんでした。');
+          return;
+        }
+        periods = response.periods || [];
+        activePeriod = response.activePeriod;
+        appSettings = response.settings || {};
+        var loginSetting = response.settings ? response.settings['ログイン機能有効'] : 1;
+        if (loginSetting === 0 || loginSetting === '0' || loginSetting === false) {
+          loginEnabled = false;
+          showSimpleLogin(response.evaluators || []);
+        } else {
+          loginEnabled = true;
+          if (response.evaluators && response.evaluators.length > 0) {
+            registerName.innerHTML = '<option value="">選択してください</option>' +
+              response.evaluators.map(function(n) { return '<option value="' + escapeHtml(n) + '">' + escapeHtml(n) + '</option>'; }).join('');
+          }
+        }
+      })
+      .withFailureHandler(function(error) {
+        showError('初期データの読み込みに失敗しました。\nエラー: ' + error.message);
+      })
+      .getInitialData();
+  }
+
+  function showSimpleLogin(evaluators) {
+    var tabButtons = document.querySelector('.tab-buttons');
+    if (tabButtons) tabButtons.style.display = 'none';
+    registerContent.classList.add('hidden');
+    loginContent.innerHTML =
+      '<div class="form-group">' +
+        '<label for="simpleLoginName" class="required">あなたの名前を選択してください</label>' +
+        '<select id="simpleLoginName"><option value="">選択してください</option>' +
+        evaluators.map(function(n) { return '<option value="' + escapeHtml(n) + '">' + escapeHtml(n) + '</option>'; }).join('') +
+        '</select>' +
+      '</div>' +
+      '<button id="simpleLoginButton" class="login-button">開始</button>';
+    var simpleBtn = document.getElementById('simpleLoginButton');
+    var simpleName = document.getElementById('simpleLoginName');
+    if (simpleBtn && simpleName) {
+      simpleBtn.addEventListener('click', function() {
+        var name = simpleName.value;
+        if (!name) { showError('名前を選択してください。'); return; }
+        simpleBtn.disabled = true;
+        simpleBtn.textContent = '読み込み中...';
+        clearMessages();
+        google.script.run
+          .withSuccessHandler(handleLoginSuccess)
+          .withFailureHandler(handleLoginError)
+          .authenticate(name, '');
+      });
+    }
+  }
+
+  // ===== ログイン・登録 =====
+  function login() {
+    var email = loginEmail.value.trim();
+    var pw = loginPassword.value.trim();
+    if (!email || !pw) { showError('メールアドレスとパスワードを入力してください。'); return; }
+    if (!validateEmail(email)) { showError('正しいメールアドレスを入力してください。'); return; }
+    loginButton.disabled = true;
+    loginButton.textContent = 'ログイン中...';
+    clearMessages();
+    google.script.run
+      .withSuccessHandler(handleLoginSuccess)
+      .withFailureHandler(handleLoginError)
+      .authenticate(email, pw);
+  }
+
+  function register() {
+    var name = registerName.value;
+    var email = registerEmail.value.trim();
+    var pw = registerPassword.value.trim();
+    var confirmPw = confirmPassword.value.trim();
+    if (!name) { showError('名前を選択してください。'); return; }
+    if (!validateEmail(email)) { showError('正しいメールアドレスを入力してください。'); return; }
+    if (!validatePassword(pw)) { showError('パスワードは4〜16文字の英数字で入力してください。'); return; }
+    if (pw !== confirmPw) { showError('パスワードが一致しません。'); return; }
+    registerButton.disabled = true;
+    registerButton.textContent = '登録中...';
+    clearMessages();
+    google.script.run
+      .withSuccessHandler(function(result) {
+        if (result.isRegistered) {
+          showError('この名前は既に登録されています。ログインタブからログインしてください。');
+          registerButton.disabled = false;
+          registerButton.textContent = '登録';
+        } else {
+          google.script.run
+            .withSuccessHandler(function(resp) {
+              registerButton.disabled = false;
+              registerButton.textContent = '登録';
+              if (resp.status === 'success') {
+                showSuccess('登録が完了しました。\nログインタブからログインしてください。');
+                setTimeout(function() { switchTab('login'); loginEmail.value = email; }, 3000);
+              } else {
+                showError(resp.message);
+              }
+            })
+            .withFailureHandler(function(err) {
+              showError(err.message || '登録に失敗しました');
+              registerButton.disabled = false;
+              registerButton.textContent = '登録';
+            })
+            .registerUser(name, email, pw);
+        }
+      })
+      .checkUserRegistration(name);
+  }
+
+  function handleLoginSuccess(response) {
+    if (response.status === 'success') {
+      currentUser = response.data.evaluatorName;
+      evaluatorList = response.data.evaluators;
+      evaluatedList = response.data.evaluated;
+      itemTemplates = response.data.items;
+      appSettings = response.data.settings;
+      periods = response.data.periods || [];
+      activePeriod = response.data.activePeriod;
+      isAdmin = response.data.isAdmin || false;
+
+      loginPage.classList.add('hidden');
+      mainApp.classList.remove('hidden');
+      loggedInUser.textContent = currentUser;
+      updatePeriodDisplay();
+
+      if (isAdmin) {
+        adminBadge.classList.remove('hidden');
+        adminPanel.classList.remove('hidden');
+        refreshProgress();
+      } else {
+        adminBadge.classList.add('hidden');
+        adminPanel.classList.add('hidden');
+      }
+
+      if (!activePeriod) {
+        alert('評価期間が設定されていません。管理者に連絡してください。');
+        return;
+      }
+
+      if (response.data.savedData) {
+        if (confirm('前回の入力内容が保存されています。続きから再開しますか？')) {
+          restoreSavedState(response.data.savedData);
+        } else {
+          google.script.run.clearTempData(currentUser);
+          setupStep1();
+        }
+      } else {
+        setupStep1();
+      }
+    } else {
+      handleLoginError(response.message);
+    }
+  }
+
+  function handleLoginError(error) {
+    showError(error || 'ログインに失敗しました。');
+    if (loginEnabled) {
+      loginButton.disabled = false;
+      loginButton.textContent = 'ログイン';
+    } else {
+      var btn = document.getElementById('simpleLoginButton');
+      if (btn) { btn.disabled = false; btn.textContent = '開始'; }
+    }
+  }
+
+  function logout() {
+    if (!confirm('ログアウトしますか？入力中のデータは保存されています。')) return;
+    currentUser = '';
+    isAdmin = false;
+    mainApp.classList.add('hidden');
+    loginPage.classList.remove('hidden');
+    selectedEvaluatedPersons = [];
+    evaluationDataStore = {};
+    currentEvaluationIndex = 0;
+    clearMessages();
+    if (loginEnabled) {
+      loginButton.disabled = false;
+      loginButton.textContent = 'ログイン';
+      loginEmail.value = '';
+      loginPassword.value = '';
+    } else {
+      location.reload();
+    }
+  }
+
+  // ===== 管理者: 進捗確認 =====
+  function refreshProgress() {
+    var periodId = activePeriod ? activePeriod.id : null;
+    var container = document.getElementById('progressTableContainer');
+    container.innerHTML = '<p>読み込み中...</p>';
+    google.script.run
+      .withSuccessHandler(function(result) {
+        if (result.status !== 'success') {
+          container.innerHTML = '<p style="color:red;">' + escapeHtml(result.message) + '</p>';
+          return;
+        }
+        var d = result.data;
+        var html = '<div class="progress-summary">全体進捗: ' + d.totalCompleted + ' / ' + d.totalExpected + ' 件完了</div>';
+        html += '<div class="progress-bar"><div class="progress-bar-fill" style="width:' +
+          (d.totalExpected > 0 ? Math.round(d.totalCompleted / d.totalExpected * 100) : 0) + '%">' +
+          (d.totalExpected > 0 ? Math.round(d.totalCompleted / d.totalExpected * 100) : 0) + '%</div></div>';
+        html += '<table class="progress-table"><tr><th>被評価者</th><th>完了数</th><th>必要数</th><th>状態</th><th>評価者</th></tr>';
+        d.evaluatedList.forEach(function(person) {
+          var p = d.progress[person] || { completed: 0, total: d.evaluatorList.length, evaluators: [] };
+          var isDone = p.completed >= p.total;
+          html += '<tr><td>' + escapeHtml(person) + '</td>' +
+            '<td>' + p.completed + '</td><td>' + p.total + '</td>' +
+            '<td class="' + (isDone ? 'complete' : 'incomplete') + '">' + (isDone ? '完了' : '未完了') + '</td>' +
+            '<td style="font-size:12px;text-align:left;">' + p.evaluators.map(escapeHtml).join(', ') + '</td></tr>';
+        });
+        html += '</table>';
+        container.innerHTML = html;
+
+        // 全完了チェック
+        var btnComplete = document.getElementById('btnCompleteEval');
+        if (d.totalCompleted >= d.totalExpected && d.totalExpected > 0) {
+          btnComplete.disabled = false;
+          btnComplete.textContent = '評価完了・シート出力';
+        } else {
+          btnComplete.disabled = false; // 途中でも出力可能にする
+          btnComplete.textContent = '評価シート出力（' + d.totalCompleted + '/' + d.totalExpected + '件）';
+        }
+      })
+      .withFailureHandler(function(err) {
+        container.innerHTML = '<p style="color:red;">エラー: ' + escapeHtml(err.message) + '</p>';
+      })
+      .getEvaluationProgress(periodId);
+  }
+
+  // ===== 管理者: 評価完了・シート出力 =====
+  function completeEvaluation() {
+    if (!confirm('評価シートを出力しますか？\n（評価期間のステータスが「完了」に変わります）')) return;
+    var btn = document.getElementById('btnCompleteEval');
+    btn.disabled = true;
+    btn.textContent = '生成中...';
+    var periodId = activePeriod ? activePeriod.id : null;
+    google.script.run
+      .withSuccessHandler(function(result) {
+        btn.disabled = false;
+        btn.textContent = '評価完了・シート出力';
+        if (result.status !== 'success') {
+          alert('エラー: ' + result.message);
+          return;
+        }
+        renderEvalSheets(result.data);
+      })
+      .withFailureHandler(function(err) {
+        btn.disabled = false;
+        btn.textContent = '評価完了・シート出力';
+        alert('エラー: ' + err.message);
+      })
+      .completeEvaluationAndGenerateSheets(periodId);
+  }
+
+  // ===== 評価シートレンダリング =====
+  function renderEvalSheets(data) {
+    var container = document.getElementById('evalSheetsContainer');
+    container.innerHTML = '';
+
+    if (!data.sheets || data.sheets.length === 0) {
+      container.innerHTML = '<p>出力する評価データがありません。</p>';
+      return;
+    }
+
+    var periodLabel = data.periodInfo ? data.periodInfo.name : '';
+
+    data.sheets.forEach(function(sheet) {
+      var div = document.createElement('div');
+      div.className = 'eval-sheet';
+      div.innerHTML = buildEvalSheetHtml(sheet, periodLabel);
+      container.appendChild(div);
+    });
+
+    switchPage(pages.step4);
+  }
+
+  function buildEvalSheetHtml(s, periodLabel) {
+    var rankClass = '';
+    if (s.rank === '優秀') rankClass = 'rank-excellent';
+    else if (s.rank === '良好') rankClass = 'rank-good';
+    else if (s.rank === '要努力') rankClass = 'rank-effort';
+    else rankClass = 'rank-guidance';
+
+    var html = '';
+    // ヘッダー
+    html += '<div class="eval-sheet-header">';
+    html += '<div style="font-size:14px;opacity:.8;">' + escapeHtml(periodLabel) + ' 360°評価シート</div>';
+    html += '<h2>' + escapeHtml(s.personName) + ' さん</h2>';
+    html += '<div class="total-score">' + s.totalScore + '<span style="font-size:20px;"> / ' + s.maxScore + ' 点</span></div>';
+    html += '<span class="rank-badge ' + rankClass + '">' + escapeHtml(s.rank) + '</span>';
+    html += '<div style="font-size:13px;margin-top:10px;opacity:.8;">評価者数: ' + s.evaluatorCount + '名（本人:' + s.selfCount + ' 同僚:' + s.colleagueCount + ' 上司:' + s.supervisorCount + '）</div>';
+    html += '</div>';
+
+    // レーダーチャート
+    html += '<div class="radar-container">' + buildRadarChart(s.items) + '</div>';
+
+    // スコアテーブル
+    html += '<table class="score-table">';
+    html += '<tr><th style="text-align:left;">評価項目</th><th>グループ</th><th>本人</th><th>同僚</th><th>上司</th><th>総合</th><th>グラフ</th></tr>';
+    var maxItemScore = 0;
+    s.items.forEach(function(item) {
+      var maxCandidate = Math.max(item.selfScore, item.colleagueScore, item.supervisorScore, item.weightedScore);
+      if (maxCandidate > maxItemScore) maxItemScore = maxCandidate;
+    });
+    if (maxItemScore === 0) maxItemScore = 1;
+
+    s.items.forEach(function(item) {
+      var rowClass = item.group === 'A' ? 'group-a' : 'group-b';
+      var barWidth = Math.round(item.weightedScore / maxItemScore * 100);
+      html += '<tr class="' + rowClass + '">';
+      html += '<td>' + escapeHtml(item.title) + '</td>';
+      html += '<td>' + escapeHtml(item.group) + '</td>';
+      html += '<td>' + item.selfScore + '</td>';
+      html += '<td>' + item.colleagueScore + '</td>';
+      html += '<td>' + item.supervisorScore + '</td>';
+      html += '<td><strong>' + item.weightedScore + '</strong></td>';
+      html += '<td style="text-align:left;min-width:120px;"><span class="score-bar" style="width:' + barWidth + '%;background:' + (item.group === 'A' ? '#e67e22' : '#3498db') + ';"></span></td>';
+      html += '</tr>';
+    });
+
+    // 合計行
+    html += '<tr class="total-row"><td>A項目 合計</td><td>A</td><td colspan="3"></td><td>' + s.totalA + '</td><td></td></tr>';
+    html += '<tr class="total-row"><td>B項目 合計</td><td>B</td><td colspan="3"></td><td>' + s.totalB + '</td><td></td></tr>';
+    html += '<tr class="total-row" style="font-size:16px;"><td>総合得点</td><td></td><td colspan="3"></td><td>' + s.totalScore + '</td><td></td></tr>';
+    html += '</table>';
+
+    // 良い点・改善点
+    if (s.goodPoints.length > 0 || s.improvementPoints.length > 0) {
+      html += '<div class="good-improve-section">';
+      html += '<div class="good-points"><h4>良い点</h4>';
+      s.goodPoints.forEach(function(p, i) { html += '<div class="point-item">' + (i + 1) + '. ' + escapeHtml(p) + '</div>'; });
+      if (s.goodPoints.length === 0) html += '<div class="point-item" style="color:#999;">データなし</div>';
+      html += '</div>';
+      html += '<div class="improve-points"><h4>改善点</h4>';
+      s.improvementPoints.forEach(function(p, i) { html += '<div class="point-item">' + (i + 1) + '. ' + escapeHtml(p) + '</div>'; });
+      if (s.improvementPoints.length === 0) html += '<div class="point-item" style="color:#999;">データなし</div>';
+      html += '</div></div>';
+    }
+
+    // コメント
+    if (s.comments.length > 0) {
+      html += '<div class="comments-section"><h3>コメント</h3>';
+      s.comments.forEach(function(c) {
+        var cls = 'colleague';
+        if (c.role === '本人') cls = 'self';
+        else if (c.role === '上司' || c.role === '院長') cls = 'supervisor';
+        var roleLabel = c.role === '院長' ? '上司' : c.role;
+        html += '<div class="comment-block ' + cls + '">';
+        html += '<div class="comment-role">[' + escapeHtml(roleLabel) + ']</div>';
+        html += '<div class="comment-text">' + escapeHtml(c.text) + '</div>';
+        html += '</div>';
+      });
+      html += '</div>';
+    }
+
+    return html;
+  }
+
+  // ===== レーダーチャート（SVG）=====
+  function buildRadarChart(items) {
+    if (!items || items.length === 0) return '';
+    var n = items.length;
+    var cx = 200, cy = 200, r = 150;
+    var svg = '<svg viewBox="0 0 400 430" width="400" height="430" xmlns="http://www.w3.org/2000/svg">';
+
+    // 最大スコアを計算
+    var maxScore = 0;
+    items.forEach(function(item) {
+      var m = Math.max(item.selfScore, item.colleagueScore, item.supervisorScore);
+      if (m > maxScore) maxScore = m;
+    });
+    if (maxScore === 0) maxScore = 1;
+
+    // 背景グリッド（5段階）
+    for (var lv = 1; lv <= 5; lv++) {
+      var rr = r * lv / 5;
+      var pts = [];
+      for (var i = 0; i < n; i++) {
+        var angle = (Math.PI * 2 * i / n) - Math.PI / 2;
+        pts.push(Math.round(cx + rr * Math.cos(angle)) + ',' + Math.round(cy + rr * Math.sin(angle)));
+      }
+      svg += '<polygon points="' + pts.join(' ') + '" fill="none" stroke="#ddd" stroke-width="1"/>';
+    }
+
+    // 軸線
+    for (var j = 0; j < n; j++) {
+      var angle2 = (Math.PI * 2 * j / n) - Math.PI / 2;
+      var ex = cx + r * Math.cos(angle2);
+      var ey = cy + r * Math.sin(angle2);
+      svg += '<line x1="' + cx + '" y1="' + cy + '" x2="' + Math.round(ex) + '" y2="' + Math.round(ey) + '" stroke="#ccc" stroke-width="1"/>';
+    }
+
+    // データプロット関数
+    function plotData(dataKey, color, opacity) {
+      var pts = [];
+      for (var k = 0; k < n; k++) {
+        var val = items[k][dataKey] / maxScore;
+        if (val > 1) val = 1;
+        var a = (Math.PI * 2 * k / n) - Math.PI / 2;
+        pts.push(Math.round(cx + r * val * Math.cos(a)) + ',' + Math.round(cy + r * val * Math.sin(a)));
+      }
+      svg += '<polygon points="' + pts.join(' ') + '" fill="' + color + '" fill-opacity="' + opacity + '" stroke="' + color + '" stroke-width="2"/>';
+      // ドット
+      for (var m = 0; m < n; m++) {
+        var val2 = items[m][dataKey] / maxScore;
+        if (val2 > 1) val2 = 1;
+        var a2 = (Math.PI * 2 * m / n) - Math.PI / 2;
+        var dx = cx + r * val2 * Math.cos(a2);
+        var dy = cy + r * val2 * Math.sin(a2);
+        svg += '<circle cx="' + Math.round(dx) + '" cy="' + Math.round(dy) + '" r="4" fill="' + color + '"/>';
+      }
+    }
+
+    plotData('selfScore', '#e74c3c', '0.1');
+    plotData('colleagueScore', '#3498db', '0.1');
+    plotData('supervisorScore', '#27ae60', '0.15');
+
+    // ラベル
+    for (var la = 0; la < n; la++) {
+      var angle3 = (Math.PI * 2 * la / n) - Math.PI / 2;
+      var lx = cx + (r + 30) * Math.cos(angle3);
+      var ly = cy + (r + 30) * Math.sin(angle3);
+      var anchor = 'middle';
+      if (Math.cos(angle3) < -0.1) anchor = 'end';
+      else if (Math.cos(angle3) > 0.1) anchor = 'start';
+      svg += '<text x="' + Math.round(lx) + '" y="' + Math.round(ly) + '" text-anchor="' + anchor + '" dominant-baseline="central" font-size="12" fill="#333">' + escapeHtml(items[la].title) + '</text>';
+    }
+
+    // 凡例
+    svg += '<rect x="80" y="400" width="12" height="12" fill="#e74c3c"/><text x="97" y="411" font-size="12" fill="#333">本人</text>';
+    svg += '<rect x="150" y="400" width="12" height="12" fill="#3498db"/><text x="167" y="411" font-size="12" fill="#333">同僚</text>';
+    svg += '<rect x="220" y="400" width="12" height="12" fill="#27ae60"/><text x="237" y="411" font-size="12" fill="#333">上司</text>';
+
+    svg += '</svg>';
+    return svg;
+  }
+
+  // ===== ステップ1: 被評価者選択 =====
+  function setupStep1() {
+    var container = document.getElementById('evaluatedPersonCheckboxes');
+    var isSelfInList = evaluatedList.indexOf(currentUser) >= 0;
+    container.innerHTML = evaluatedList.map(function(name) {
+      var isSelf = isSelfInList && (name === currentUser);
+      var checked = isSelf || selectedEvaluatedPersons.indexOf(name) >= 0 ? ' checked' : '';
+      var disabled = isSelf ? ' disabled' : '';
+      var labelText = isSelf ? name + ' (自己評価 - 必須)' : name;
+      return '<div class="checkbox-list-item"><label><input type="checkbox" name="evaluated" value="' +
+        escapeHtml(name) + '"' + checked + disabled + '> <span>' + escapeHtml(labelText) + '</span></label></div>';
+    }).join('');
+    container.querySelectorAll('input[type="checkbox"]').forEach(function(cb) {
+      cb.addEventListener('change', triggerAutosave);
+    });
+    switchPage(pages.step1);
+  }
+
+  function toggleSelectAll(select) {
+    document.querySelectorAll('input[name="evaluated"]:not(:disabled)').forEach(function(cb) { cb.checked = select; });
+    triggerAutosave();
+  }
+
+  // ===== ステップ2: 評価フォーム =====
+  function calculateDynamicPoints(group) {
+    var itemsInGroup = itemTemplates.filter(function(i) { return i.group === group; });
+    var groupWeight = group === 'A' ? appSettings['A項目重み'] : appSettings['B項目重み'];
+    var groupMaxScore = 300 * (groupWeight / 100);
+    return {
+      maxScorePerItem: groupMaxScore / itemsInGroup.length,
+      weights: {
+        'よくできる': appSettings['よくできる重み'] || 1.0,
+        'できる': appSettings['できる重み'] || 0.6,
+        '少しできる': appSettings['少しできる重み'] || 0.3,
+        'できていない': 0
+      }
+    };
+  }
+
+  function buildItemHtml(item, itemIndex) {
+    var info = calculateDynamicPoints(item.group);
+    var maxPerCheck = info.maxScorePerItem / item.checks.length;
+    var levels = [
+      { label: 'よくできる', weight: info.weights['よくできる'] },
+      { label: 'できる', weight: info.weights['できる'] },
+      { label: '少しできる', weight: info.weights['少しできる'] },
+      { label: 'できていない', weight: info.weights['できていない'] }
+    ];
+
+    var subHtml = item.checks.map(function(checkText, checkIndex) {
+      var radioName = 'item_' + itemIndex + '_check_' + checkIndex;
+      var radios = levels.map(function(lv) {
+        var score = Math.round(maxPerCheck * lv.weight * 10) / 10;
+        return '<label><input type="radio" name="' + radioName + '" value="' + score + '" required> ' +
+          escapeHtml(lv.label) + '<br><small>(' + score + '点)</small></label>';
+      }).join('');
+      return '<div class="sub-item"><div class="sub-item-title">' + escapeHtml(checkText) + '</div>' +
+        '<div class="likert-scale">' + radios + '</div></div>';
+    }).join('');
+
+    return '<div class="item-container"><h4>' + item.id + '. ' + escapeHtml(item.title) + '</h4>' + subHtml + '</div>';
+  }
+
+  function buildEvaluationFormHtml() {
+    var aItems = itemTemplates.filter(function(i) { return i.group === 'A'; });
+    var bItems = itemTemplates.filter(function(i) { return i.group === 'B'; });
+    var aLen = aItems.length;
+    var aHtml = aItems.map(function(item, idx) { return buildItemHtml(item, idx); }).join('');
+    var bHtml = bItems.map(function(item, idx) { return buildItemHtml(item, aLen + idx); }).join('');
+    return '<h3>A. 重点改善項目</h3>' + aHtml +
+           '<h3>B. 基本評価項目</h3>' + bHtml +
+           '<h3>総括</h3>' +
+           '<div class="form-group"><label for="comments" class="required">具体的なコメント</label>' +
+           '<textarea id="comments" rows="4" placeholder="具体的なコメントを記入してください"></textarea></div>';
+  }
+
+  function startEvaluation() {
+    selectedEvaluatedPersons = Array.from(document.querySelectorAll('input[name="evaluated"]:checked')).map(function(cb) { return cb.value; });
+    if (selectedEvaluatedPersons.length === 0) { alert('評価する人を1人以上選択してください。'); return; }
+    var form = document.getElementById('evaluationForm');
+    form.innerHTML = buildEvaluationFormHtml();
+    form.querySelectorAll('input[type="radio"]').forEach(function(r) { r.addEventListener('change', triggerAutosave); });
+    var cmts = document.getElementById('comments');
+    if (cmts) cmts.addEventListener('input', triggerAutosave);
+    switchPage(pages.step2);
+    displayEvaluationForm(0);
+  }
+
+  function displayEvaluationForm(index) {
+    currentEvaluationIndex = index;
+    var personName = selectedEvaluatedPersons[index];
+    var total = selectedEvaluatedPersons.length;
+    var header = document.getElementById('evaluationHeader');
+    if (header) header.textContent = '評価 (' + (index + 1) + '/' + total + '): ' + personName + ' さん';
+    var fill = document.getElementById('progressBarFill');
+    var pct = Math.round((index + 1) / total * 100);
+    if (fill) { fill.style.width = pct + '%'; fill.textContent = pct + '%'; }
+    var nextBtn = document.getElementById('nextButton');
+    if (nextBtn) nextBtn.textContent = (index + 1 < total) ? '次の人の評価へ' : 'すべての評価を送信する';
+    var form = document.getElementById('evaluationForm');
+    if (form) {
+      form.querySelectorAll('input[type="radio"]').forEach(function(r) { r.checked = false; });
+      var cmts = document.getElementById('comments');
+      if (cmts) cmts.value = '';
+    }
+    var backBtn = document.getElementById('btn-back-to-previous');
+    if (backBtn) backBtn.style.display = index > 0 ? 'inline-block' : 'none';
+    if (evaluationDataStore[personName]) restoreFormData(personName);
+    if (header) header.scrollIntoView({ behavior: 'smooth' });
+    triggerAutosave();
+  }
+
+  function saveCurrentEvaluation() {
+    if (selectedEvaluatedPersons.length === 0) return;
+    var personName = selectedEvaluatedPersons[currentEvaluationIndex];
+    if (!personName) return;
+    var cmts = document.getElementById('comments');
+    evaluationDataStore[personName] = {
+      checks: itemTemplates.map(function(item, itemIndex) {
+        return item.checks.map(function(_, checkIndex) {
+          var radio = document.querySelector('input[name="item_' + itemIndex + '_check_' + checkIndex + '"]:checked');
+          return radio ? radio.value : null;
+        });
+      }),
+      comments: cmts ? cmts.value : ''
+    };
+  }
+
+  function restoreFormData(personName) {
+    var data = evaluationDataStore[personName];
+    if (!data) return;
+    data.checks.forEach(function(subScores, itemIndex) {
+      subScores.forEach(function(score, checkIndex) {
+        if (score !== null && score !== undefined) {
+          var radio = document.querySelector('input[name="item_' + itemIndex + '_check_' + checkIndex + '"][value="' + score + '"]');
+          if (radio) radio.checked = true;
+        }
+      });
+    });
+    var cmts = document.getElementById('comments');
+    if (cmts) cmts.value = data.comments || '';
+  }
+
+  function goToNextEvaluation() {
+    saveCurrentEvaluation();
+    if (currentEvaluationIndex < selectedEvaluatedPersons.length - 1) {
+      displayEvaluationForm(currentEvaluationIndex + 1);
+    } else {
+      submitAllEvaluations();
+    }
+  }
+
+  function goToPreviousEvaluation() {
+    saveCurrentEvaluation();
+    if (currentEvaluationIndex > 0) displayEvaluationForm(currentEvaluationIndex - 1);
+  }
+
+  function submitAllEvaluations() {
+    saveCurrentEvaluation();
+    for (var i = 0; i < selectedEvaluatedPersons.length; i++) {
+      var person = selectedEvaluatedPersons[i];
+      var data = evaluationDataStore[person];
+      if (!data) {
+        alert(person + 'さんの評価が入力されていません。');
+        displayEvaluationForm(i);
+        return;
+      }
+      var allAnswered = data.checks.every(function(sub) { return sub.every(function(s) { return s !== null && s !== undefined; }); });
+      var hasCmt = data.comments && data.comments.trim() !== '';
+      if (!allAnswered || !hasCmt) {
+        var missing = [];
+        if (!allAnswered) missing.push('評価項目');
+        if (!hasCmt) missing.push('具体的なコメント');
+        alert(person + 'さんの評価で未入力があります:\n・' + missing.join('\n・'));
+        displayEvaluationForm(i);
+        return;
+      }
+    }
+
+    var nextBtn = document.getElementById('nextButton');
+    nextBtn.disabled = true;
+    nextBtn.textContent = '送信中...';
+
+    var evalsForServer = selectedEvaluatedPersons.map(function(person) {
+      var d = evaluationDataStore[person] || {};
+      return {
+        evaluator: currentUser,
+        evaluatedPerson: person,
+        checks: d.checks || [],
+        comments: d.comments || ''
+      };
+    });
+
+    var periodId = activePeriod ? activePeriod.id : null;
+    google.script.run
+      .withSuccessHandler(function(response) {
+        var msg = document.getElementById('status-message');
+        if (response.status === 'success') {
+          msg.innerHTML = '<div style="color:#27ae60;font-size:18px;font-weight:bold;">&#10003; ' + escapeHtml(response.message) + '</div>';
+        } else {
+          msg.innerHTML = '<div style="color:#e74c3c;">' + escapeHtml(response.message) + '</div>';
+        }
+        switchPage(pages.step3);
+      })
+      .withFailureHandler(function(err) {
+        alert('送信エラー: ' + err.message);
+        nextBtn.disabled = false;
+        nextBtn.textContent = 'すべての評価を送信する';
+      })
+      .saveMultipleEvaluations(evalsForServer, periodId);
+  }
+
+  function restoreSavedState(savedData) {
+    selectedEvaluatedPersons = savedData.selectedEvaluatedPersons || [];
+    evaluationDataStore = savedData.evaluationDataStore || {};
+    currentEvaluationIndex = savedData.currentEvaluationIndex || 0;
+    if (savedData.currentStep === 'step2') {
+      setupStep1();
+      startEvaluation();
+      displayEvaluationForm(currentEvaluationIndex);
+    } else {
+      setupStep1();
+    }
+  }
+
+  function resetApp() {
+    var nextBtn = document.getElementById('nextButton');
+    if (nextBtn) nextBtn.disabled = false;
+    selectedEvaluatedPersons = [];
+    evaluationDataStore = {};
+    currentEvaluationIndex = 0;
+    if (isAdmin) refreshProgress();
+    setupStep1();
+  }
+
+  function goBackToStep1() {
+    saveCurrentEvaluation();
+    switchPage(pages.step1);
+  }
+
+  // ===== イベントバインド =====
+  loginTab.addEventListener('click', function() { switchTab('login'); });
+  registerTab.addEventListener('click', function() { switchTab('register'); });
+  loginButton.addEventListener('click', login);
+  registerButton.addEventListener('click', register);
+  logoutLink.addEventListener('click', logout);
+  loginPassword.addEventListener('keypress', function(e) { if (e.key === 'Enter') login(); });
+
+  document.getElementById('btn-select-all').addEventListener('click', function() { toggleSelectAll(true); });
+  document.getElementById('btn-deselect-all').addEventListener('click', function() { toggleSelectAll(false); });
+  document.getElementById('btn-start-eval').addEventListener('click', startEvaluation);
+  document.getElementById('btn-back-to-step1').addEventListener('click', goBackToStep1);
+  document.getElementById('btn-back-to-previous').addEventListener('click', goToPreviousEvaluation);
+  document.getElementById('nextButton').addEventListener('click', goToNextEvaluation);
+  document.getElementById('btn-reset').addEventListener('click', resetApp);
+
+  // 管理者パネル
+  document.getElementById('btnRefreshProgress').addEventListener('click', refreshProgress);
+  document.getElementById('btnCompleteEval').addEventListener('click', completeEvaluation);
+  document.getElementById('btnPrintSheets').addEventListener('click', function() { window.print(); });
+  document.getElementById('btnBackFromSheets').addEventListener('click', function() {
+    switchPage(pages.step1);
+    if (isAdmin) refreshProgress();
+  });
+
+  // ===== 開始 =====
+  initLoginPage();
+});
+</script>
+</body>
+</html>
